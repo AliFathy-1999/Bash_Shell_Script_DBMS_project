@@ -24,7 +24,14 @@ function CreateDatabases {
     echo Enter your database name
     read dbname 
     # check special characters and spaces and number before database name  ***************************************************
-    if [ -d $dbname ] 
+   
+		
+	if [[ $dbname =~ [/.:*\|\-] ]]; then
+		echo -e "You can't enter these characters => . / : * $ & - | \n"
+	
+	elif [[ $dbname =~ ^[0-9] ]]; then
+		echo -e "You can't start DB name with number \n"
+    elif [ -d $dbname ] 
     then
         echo Database already exists
     else 
@@ -52,7 +59,7 @@ function ConnectToDatabase {
     fi
 } 
 function DropDatabases {
-    echo "Enter database name you want to drop it :"
+    echo "Enter database name you want to drop :"
     read dbname
     # check special characters and spaces and number before database name  ***************************************************
     if [ -d $dbname ]
@@ -64,6 +71,17 @@ function DropDatabases {
     fi
     MainMenu
 }
+
+##function CheckDataType {
+##if [[ $dbname =~ [/.:*\|\-] ]]; 
+##then
+##		echo -e "You can't enter these characters => . / : * $ & - | \n"
+	
+##	elif [[ $dbname =~ ^[0-9] ]];
+ ##then
+##		echo -e "You can't start DB name with number \n"
+##fi
+##} 
 
 MainMenu
 
