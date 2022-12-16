@@ -136,12 +136,26 @@ function CreateTable {
     
     TableMenu
 }
-# function ListTables {
+ function ListTables {
+	ls -F | grep /
+	 echo -e "\nTables listed Successfully \n" 
+    TableMenu
 
-# }
-# function DropTable {
+ }
+ function DropTable {
+	echo Enter the table name you want to drop 
+	read DropT
+	if [ -d $DropT ]
+    then 
+        rm -r $DropT
+	
+        echo -e "The Table $DropT Droped Successfully \n"
+    else
+      echo -e "Wrong Table Name ($DropT) \n "
+    fi
+    TableMenu
 
-# }
+ }
 # function InsertintoTable {
 
 # }
