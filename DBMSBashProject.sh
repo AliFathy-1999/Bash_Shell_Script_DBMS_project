@@ -25,10 +25,13 @@ done
 function CreateDatabases {
     echo Enter your database name
     read dbname 
-   
-    if [ CheckDataType ]
+    
+    if [[ $dbname == *['!'@#\$%^\&*()_+]* ]];
     then
-        CheckDataType
+        echo -e "You can't enter these characters => . / : * $ @ ^ % ( ) ! + _ # & - | \n"
+    elif [[ $dbname =~ ^[0-9] ]];
+    then
+		echo -e "You can't start Database name with number \n"
     elif [ -d $dbname ] 
     then
         echo Database already exists
@@ -71,28 +74,6 @@ function DropDatabases {
     MainMenu
 }
 
-function CheckDataType {
-if [[ $dbname =~ [/.:*\|\-$]* ]]; 
-then
-		echo -e "You can't enter these characters => . / : * $ & - | \n"
-	
-	elif [[ $dbname =~ ^[0-9] ]];
- then
-		echo -e "You can't start Database name with number \n"
-fi
-} 
-
-function CheckTableName {
-if [[ $tablename =~ [/.:*\|\-$]* ]]; 
-then
-		echo -e "You can't enter these characters => . / : * $ & - | \n"
-	
-	elif [[ $tablename =~ ^[0-9] ]];
- then
-    #12233tablename =====> You can't enter these characters => . / : * $ & - | \n NOT You can't start Table name with number 
-		echo -e "You can't start Table name with number \n"
-fi
-} 
 function TableMenu {
     echo -e "\n |-------------------Table Menu-------------------------| \n"
 select option in "1. Create Table" "2. List Table" "3. Drop Table " "4. Insert into Table" "5. Select from Table" "6. Delete From Table" "7. Update Table" "8. Back to Main Menu" "9. Exit" 
@@ -116,12 +97,13 @@ function CreateTable {
     echo Enter your table name
     read tablename 
    
-    # if [ CheckTableName ]
-    # then
-    #     CheckTableName
-
-    # el
-    if [ -f ./$tablename/$tablename ] 
+     if [[ $tablename == *['!'@#\$%^\&*()_+]* ]];
+    then
+        echo -e "You can't enter these characters => . / : * $ @ ^ % ( ) ! + _ # & - | \n"
+    elif [[ $tablename =~ ^[0-9] ]];
+    then
+		echo -e "You can't start Table name with number \n"
+     elif [ -f ./$tablename/$tablename ] 
     then
         echo Table already exists
     fi
@@ -129,10 +111,45 @@ function CreateTable {
         touch ./$tablename/$tablename
         touch ./$tablename/$tablename-metadata
         echo -e "$tablename Created Successfully \n" 
-         echo -e "Enter Number of Fields (Column) : \n" 
-        # read colno >> ./$tablename/$tablename-metadata
+        separator="|"
+        metaDataFormate="Field Name"$separator"Field Type"$separator"Primary key"
+        echo $metaDataFormate >>./$tablename/$tablename-metadata
+        echo -e "Enter Number of Fields (Column) : \n" 
         read colno 
         echo $colno > ./$tablename/$tablename-metadata
+        array[$colno]
+        typeset -i i=1
+
+        while [ $i -le $colno ]
+        do
+        #\c
+            echo -e " Enter name of Field (Column $i) : \n"
+            read Fieldname
+            #echo $Fieldname >>./$tablename/$tablename-metadata
+            echo -e "Enter Type of $Fieldname (Column $i) : \n"
+            # select type in "1. String" "2. Integar "  
+            # do
+            #     case $REPLY in
+            #     1) Fieldtype="String"; echo $Fieldtype >>./$tablename/$tablename-metadata; break;;
+            #     2) FieldType="Integar"; echo $Fieldtype >>./$tablename/$tablename-metadata; break;;
+            #     *) echo $REPLY is not one of the choices ;;
+            # esac
+            # done 
+            select var in "int" "str"
+            do
+            case $var in
+                int ) array[$i]="int"; echo ${array[$i]} >>./$tablename/$tablename-metadata; break;;
+                str ) array[$i]="str"; echo ${array[$i]} >>./$tablename/$tablename-metadata; break;;
+                * ) echo "Wrong Choice" ;;
+            esac
+            done
+            
+            #read Fieldtype
+            #echo $Fieldtype >>./$tablename/$tablename-metadata
+
+            #i=$i+1
+            ((i++))
+        done
     
     TableMenu
 }
