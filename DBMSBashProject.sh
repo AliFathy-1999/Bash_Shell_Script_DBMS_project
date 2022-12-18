@@ -25,8 +25,9 @@ done
 function CreateDatabases {
     echo Enter your database name
     read dbname 
-    
-    if [[ $dbname == *['!'@#\$%^\&*()_+]* ]];
+    if [[ $dbname = "" ]]; then
+        echo -e "You entered empty value \n"
+    elif [[ $dbname == *['!'@#\$%^\&*()_+]* ]];
     then
         echo -e "You can't enter these characters => . / : * $ @ ^ % ( ) ! + _ # & - | \n"
     elif [[ $dbname =~ ^[0-9] ]];
@@ -97,60 +98,78 @@ function CreateTable {
     echo Enter your table name
     read tablename 
    
-     if [[ $tablename == *['!'@#\$%^\&*()_+]* ]];
+    if [[ $tablename == *['!'@#\$%^\&*()_+]* ]];
     then
         echo -e "You can't enter these characters => . / : * $ @ ^ % ( ) ! + _ # & - | \n"
+        CreateTable
     elif [[ $tablename =~ ^[0-9] ]];
     then
 		echo -e "You can't start Table name with number \n"
-     elif [ -f ./$tablename/$tablename ] 
+        CreateTable
+     elif [ -f .1/$tablename/$tablename ] 
     then
         echo Table already exists
+        TableMenu
     fi
         mkdir -p $tablename
         touch ./$tablename/$tablename
         touch ./$tablename/$tablename-metadata
         echo -e "$tablename Created Successfully \n" 
-        separator="|"
-        metaDataFormate="Field Name"$separator"Field Type"$separator"Primary key"
-        echo $metaDataFormate >>./$tablename/$tablename-metadata
         echo -e "Enter Number of Fields (Column) : \n" 
         read colno 
-        echo $colno > ./$tablename/$tablename-metadata
-        array[$colno]
+        echo  "No of columns:$colno" >> ./$tablename/$tablename-metadata
+        separator=":"
+        metaDataFormate="Field Name"$separator"Field Type"$separator"Primary key"
+        echo $metaDataFormate >> ./$tablename/$tablename-metadata
         typeset -i i=1
-
+        primarykey=""
+        data=""
+        test=""
+        space="\n"
         while [ $i -le $colno ]
         do
-        #\c
             echo -e " Enter name of Field (Column $i) : \n"
             read Fieldname
-            #echo $Fieldname >>./$tablename/$tablename-metadata
+            if [[ $Fieldname == *['!'@#\$%^\&*()_+]* ]];
+             then
+                    echo -e "You can't enter these characters in field name => . / : * $ @ ^ % ( ) ! + _ # & - | \n"
+                continue
+            elif [[ $Fieldname =~ ^[0-9] ]];
+                then
+                    echo -e "You can't start Field name with number \n"
+                    continue
+            else            
             echo -e "Enter Type of $Fieldname (Column $i) : \n"
-            # select type in "1. String" "2. Integar "  
-            # do
-            #     case $REPLY in
-            #     1) Fieldtype="String"; echo $Fieldtype >>./$tablename/$tablename-metadata; break;;
-            #     2) FieldType="Integar"; echo $Fieldtype >>./$tablename/$tablename-metadata; break;;
-            #     *) echo $REPLY is not one of the choices ;;
-            # esac
-            # done 
             select var in "int" "str"
             do
             case $var in
-                int ) array[$i]="int"; echo ${array[$i]} >>./$tablename/$tablename-metadata; break;;
-                str ) array[$i]="str"; echo ${array[$i]} >>./$tablename/$tablename-metadata; break;;
+                int ) FieldType="int"; break;;
+                str ) FieldType="str"; break;;
                 * ) echo "Wrong Choice" ;;
             esac
             done
-            
-            #read Fieldtype
-            #echo $Fieldtype >>./$tablename/$tablename-metadata
-
-            #i=$i+1
+            if [[ $primarykey == "" ]]; then
+                echo -e "Make This Field PrimaryKey ??? "
+                select var in "yes" "no"
+                do
+                    case $var in
+                    yes ) primarykey="PK";
+                    data+=$space$Fieldname$separator$FieldType$separator$primarykey;
+                    break;;
+                    no )
+                    data+=$space$Fieldname$separator$FieldType$separator"";
+                    break;;
+                    * ) echo "Wrong Choice" ;;
+                    esac
+                done
+            else
+                data+=$space$Fieldname$separator$FieldType$separator"";
+            fi
             ((i++))
+            fi
         done
-    
+                echo -e $data >> ./$tablename/$tablename-metadata;
+        
     TableMenu
 }
  function ListTables {
@@ -171,7 +190,6 @@ function CreateTable {
       echo -e "Wrong Table Name ($DropT) \n "
     fi
     TableMenu
-
  }
 # function InsertintoTable {
 
