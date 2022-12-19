@@ -1,5 +1,7 @@
-No of columns:3
+No of columns:4
 Field Name|Field Type|Primary key
+
 id:int:PK
 name:str:
-level:str:
+subject:str:
+phoneno:str:

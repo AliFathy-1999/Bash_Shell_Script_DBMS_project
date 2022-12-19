@@ -119,12 +119,12 @@ function CreateTable {
         read colno 
         echo  "No of columns:$colno" >> ./$tablename/$tablename-metadata
         separator=":"
-        metaDataFormate="Field Name"$separator"Field Type"$separator"Primary key"
+        metaDataFormate="Field Name|Field Type|Primary key"
         echo $metaDataFormate >> ./$tablename/$tablename-metadata
         typeset -i i=1
         primarykey=""
         data=""
-        test=""
+        fname=""
         space="\n"
         while [ $i -le $colno ]
         do
@@ -132,7 +132,7 @@ function CreateTable {
             read Fieldname
             if [[ $Fieldname == *['!'@#\$%^\&*()_+]* ]];
              then
-                    echo -e "You can't enter these characters in field name => . / : * $ @ ^ % ( ) ! + _ # & - | \n"
+                echo -e "You can't enter these characters in field name => . / : * $ @ ^ % ( ) ! + _ # & - | \n"
                 continue
             elif [[ $Fieldname =~ ^[0-9] ]];
                 then
@@ -154,10 +154,10 @@ function CreateTable {
                 do
                     case $var in
                     yes ) primarykey="PK";
-                    data+=$space$Fieldname$separator$FieldType$separator$primarykey;
+                    data+=$Fieldname$separator$FieldType$separator$primarykey;
                     break;;
                     no )
-                    data+=$space$Fieldname$separator$FieldType$separator"";
+                    data+=$space$Fieldname$separator$FieldType$separator""$space;
                     break;;
                     * ) echo "Wrong Choice" ;;
                     esac
@@ -167,8 +167,13 @@ function CreateTable {
             fi
             ((i++))
             fi
+            fname+=$Fieldname"|"
+            
         done
                 echo -e $data >> ./$tablename/$tablename-metadata;
+                echo -e "Table created successfully \n"
+                echo $fname  >> ./$tablename/$tablename
+               
         
     TableMenu
 }
@@ -191,9 +196,46 @@ function CreateTable {
     fi
     TableMenu
  }
-# function InsertintoTable {
-
-# }
+function InsertintoTable {
+        echo -e "Enter the table name you want to insert into \n"
+        read tablename
+        NoOfColumns=`awk 'END{print NR}' ./$tablename/$tablename-metadata ` 
+        separator=":"
+        typeset -i i
+        data=""
+        alldata=""
+        fname=""
+        for (( i=3; i <= $NoOfColumns ; i++ )); do
+            Fieldname=`awk 'BEGIN{FS=":"}{ if(NR=='$i') print $1}' ./$tablename/$tablename-metadata`
+            FieldType=`awk 'BEGIN{FS=":"}{if(NR=='$i') print $2}' ./$tablename/$tablename-metadata`
+            PKorNOT=`awk 'BEGIN{FS=":"}{if(NR=='$i') print $3}' ./$tablename/$tablename-metadata`
+            fname+=Fieldname"|"
+            echo -e "Enter value of $Fieldname of type $FieldType : "
+            read data
+            if [[ $data == "" ]]
+            then
+                echo -e "You entered empty value \n"
+                echo -e "Enter value of $Fieldname of type $FieldType : "
+                    read data
+            elif [[ $FieldType == "int" ]]; then
+                 if [[ $data != *[0-9]* ]]; then
+                    echo -e "$data isn't integar"
+                    echo -e "Enter value of $Fieldname of type $FieldType : "
+                    read data
+                fi
+            fi
+            usedPk=$(cut -d ':' -f1 "./$tablename/$tablename" | awk '{if(NR != 1) print $0}' | grep -x -e "$data")
+            if ! [[ $usedPk == '' ]]; then
+				echo -e "This primary key is already used !"
+                echo -e "Enter value of $Fieldname of type $FieldType : "
+                read data
+            fi
+                alldata+=$data$separator
+        done
+            echo $alldata >>./$tablename/$tablename
+            echo -e "Data inserted Successfully :)"
+            TableMenu
+}
 # function SelectFromTable {
 
 # }
