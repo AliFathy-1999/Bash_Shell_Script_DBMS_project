@@ -271,7 +271,7 @@ result=$(awk '
             {
                 if ( $'$field' == "'$value'") print $'$field'
             }
-        ' ./$TableName/$TableName-metadata)
+        ' ./$TableName/$TableName)
 if [[ $result == "" ]]
         then
         echo "The Value is not Exist!!! "
@@ -283,8 +283,8 @@ if [[ $result == "" ]]
                 {
                     if ($'$field'=="'$value'") print NR
                 }
-            ' ./$TableName/$TableName-metadata)
-        sed -i ''$NR'd' $TableName
+            ' ./$TableName/$TableName)
+        sed -i ''$NR'd' ./$TableName/$TableName
         echo "Row Deleted Successfully"
         TableMenu
     fi
