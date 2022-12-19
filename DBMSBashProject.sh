@@ -236,12 +236,64 @@ function InsertintoTable {
             echo -e "Data inserted Successfully :)"
             TableMenu
 }
+function DeleteFromTable {
+   echo "Enter the table name :"
+	read TableName
+  if ! [[ -d $TableName ]];then
+	echo "Table isn't Exist!!!"
+	TableMenu
+  fi
+
+	echo "Enter Column name : "
+	read colName
+
+field=$(awk '
+BEGIN{FS=":"}
+    {
+        if(NR==3)
+            {
+                for(i=1;i<=NF;i++)
+                {
+                    if("'$colName'"==$i) print i
+                }
+            }
+    }'	./$TableName/$TableName-metadata)
+
+   if [[ $field == "" ]];then
+	echo "Column is not exist!!!"
+	TableMenu
+   else
+	echo "Enter the value: "	
+	read value
+
+result=$(awk '
+            BEGIN{FS=":"}
+            {
+                if ( $'$field' == "'$value'") print $'$field'
+            }
+        ' ./$TableName/$TableName-metadata)
+if [[ $result == "" ]]
+        then
+        echo "The Value is not Exist!!! "
+        TableMenu
+    else
+        NR=$(
+            awk '
+                BEGIN{FS=":"}
+                {
+                    if ($'$field'=="'$value'") print NR
+                }
+            ' ./$TableName/$TableName-metadata)
+        sed -i ''$NR'd' $TableName
+        echo "Row Deleted Successfully"
+        TableMenu
+    fi
+fi	
+ }
 # function SelectFromTable {
 
 # }
-# function DeleteFromTable {
 
-# }
 # function UpdateTable {
 
 # }
