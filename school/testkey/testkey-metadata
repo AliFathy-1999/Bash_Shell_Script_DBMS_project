@@ -1,0 +1,6 @@
+No of columns:3
+Field Name|Field Type|Primary key
+
+id:int:
+name:str:PK
+keystatus:str:

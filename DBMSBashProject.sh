@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash 
 
 clear
 
@@ -84,7 +84,7 @@ do
     2) ListTables ;;
     3) DropTable ;;
     4) InsertintoTable ;;
-    5) SelectFromTable ;;
+    5) SelectMenu ;;
     6) DeleteFromTable ;;
     7) UpdateTable ;;
     8) MainMenu ;;
@@ -157,7 +157,7 @@ function CreateTable {
                     data+=$Fieldname$separator$FieldType$separator$primarykey;
                     break;;
                     no )
-                    data+=$space$Fieldname$separator$FieldType$separator""$space;
+                    data+=$Fieldname$separator$FieldType$separator""$space;
                     break;;
                     * ) echo "Wrong Choice" ;;
                     esac
@@ -224,7 +224,7 @@ function InsertintoTable {
                     read data
                 fi
             fi
-            usedPk=$(cut -d ':' -f1 "./$tablename/$tablename" | awk '{if(NR != 1) print $0}' | grep -x -e "$data")
+            usedPk=$(cut -d ':' -f1 "./$tablename/$tablename" | awk '{if(NR != $1) print $0}' | grep -x -e "$data")
             if ! [[ $usedPk == '' ]]; then
 				echo -e "This primary key is already used !"
                 echo -e "Enter value of $Fieldname of type $FieldType : "
@@ -247,17 +247,18 @@ function DeleteFromTable {
 	echo "Enter Column name : "
 	read colName
 
-field=$(awk '
-BEGIN{FS=":"}
+field=$(
+awk '
+BEGIN{FS="|"}
     {
-        if(NR==3)
+        if(NR==1)
             {
                 for(i=1;i<=NF;i++)
                 {
                     if("'$colName'"==$i) print i
                 }
             }
-    }'	./$TableName/$TableName-metadata)
+    }' ./$TableName/$TableName 2>> /dev/null)
 
    if [[ $field == "" ]];then
 	echo "Column is not exist!!!"
@@ -266,33 +267,55 @@ BEGIN{FS=":"}
 	echo "Enter the value: "	
 	read value
 
-result=$(awk '
-            BEGIN{FS=":"}
-            {
-                if ( $'$field' == "'$value'") print $'$field'
-            }
-        ' ./$TableName/$TableName)
+result=$(awk 'BEGIN{FS=":"} { if ( $'$field' == "'$value'") print $'$field' }' ./$TableName/$TableName)
 if [[ $result == "" ]]
         then
         echo "The Value is not Exist!!! "
         TableMenu
     else
-        NR=$(
-            awk '
-                BEGIN{FS=":"}
-                {
-                    if ($'$field'=="'$value'") print NR
-                }
-            ' ./$TableName/$TableName)
+        NR=$(awk 'BEGIN{FS=":"}{ if ($'$field'=="'$value'") print NR }' ./$TableName/$TableName)
+
         sed -i ''$NR'd' ./$TableName/$TableName
         echo "Row Deleted Successfully"
         TableMenu
     fi
 fi	
  }
-# function SelectFromTable {
-
-# }
+ function SelectMenu {
+    echo -e "\n |-------------------Select Menu-------------------------| \n"
+select option in "Select All (*)" "Select By Column Name" "Select By Condition " "Back to Main Menu" "Back to Table Menu" "Exit" 
+do
+    case $REPLY in
+    1) SelectAll ;;
+    2) SelectByColName ;;
+    3) SelectByCondition ;;
+    4) MainMenu ;;
+    5) TableMenu ;;
+    6) exit ;;
+    *) echo $REPLY is not one of the choices ;;
+esac
+done 
+    echo -e "\n |-------------------------------------------------------| \n"
+}
+    function SelectAll {
+        typeset -i i
+        data=""
+        echo -e "\n Enter Table name : \n"
+        read tableName
+        echo -e "\n"
+        column -t -s '|' ./$tableName/$tableName 2>> /dev/null |  head -1
+        echo -e "*----------------------------------------------*\n"
+        column -t -s ':' ./$tableName/$tableName 2>> /dev/null | tail -n +2
+        echo -e "\n"
+        echo -e "*----------------------------------------------*\n"
+        SelectMenu
+    }
+    function SelectByColName {
+        SelectMenu
+    }
+    function SelectByCondition {
+        SelectMenu
+    }
 
 # function UpdateTable {
 
