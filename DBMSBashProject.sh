@@ -1,4 +1,4 @@
-#!/bin/bash 
+#!/bin/bash -x
 
 clear
 
@@ -77,7 +77,7 @@ function DropDatabases {
 
 function TableMenu {
     echo -e "\n |-------------------Table Menu-------------------------| \n"
-select option in "1. Create Table" "2. List Table" "3. Drop Table " "4. Insert into Table" "5. Select from Table" "6. Delete From Table" "7. Update Table" "8. Back to Main Menu" "9. Exit" 
+select option in "Create Table" "List Table" "Drop Table " "Insert into Table" "Select from Table" "Delete From Table" "Update Table" "Back to Main Menu" "Exit" 
 do
     case $REPLY in
     1) CreateTable ;;
@@ -154,10 +154,10 @@ function CreateTable {
                 do
                     case $var in
                     yes ) primarykey="PK";
-                    data+=$Fieldname$separator$FieldType$separator$primarykey;
+                        data+=$Fieldname$separator$FieldType$separator$primarykey;
                     break;;
                     no )
-                    data+=$Fieldname$separator$FieldType$separator""$space;
+                        data+=$Fieldname$separator$FieldType$separator""$space;
                     break;;
                     * ) echo "Wrong Choice" ;;
                     esac
@@ -197,43 +197,55 @@ function CreateTable {
     TableMenu
  }
 function InsertintoTable {
-        echo -e "Enter the table name you want to insert into \n"
+        echo -e "Enter the table name you want to insert into : \n"
         read tablename
-        NoOfColumns=`awk 'END{print NR}' ./$tablename/$tablename-metadata ` 
-        separator=":"
-        typeset -i i
-        data=""
-        alldata=""
-        fname=""
-        for (( i=3; i <= $NoOfColumns ; i++ )); do
-            Fieldname=`awk 'BEGIN{FS=":"}{ if(NR=='$i') print $1}' ./$tablename/$tablename-metadata`
-            FieldType=`awk 'BEGIN{FS=":"}{if(NR=='$i') print $2}' ./$tablename/$tablename-metadata`
-            PKorNOT=`awk 'BEGIN{FS=":"}{if(NR=='$i') print $3}' ./$tablename/$tablename-metadata`
-            fname+=Fieldname"|"
-            echo -e "Enter value of $Fieldname of type $FieldType : "
-            read data
-            if [[ $data == "" ]]
-            then
-                echo -e "You entered empty value \n"
-                echo -e "Enter value of $Fieldname of type $FieldType : "
-                    read data
-            elif [[ $FieldType == "int" ]]; then
-                 if [[ $data != *[0-9]* ]]; then
-                    echo -e "$data isn't integar"
-                    echo -e "Enter value of $Fieldname of type $FieldType : "
-                    read data
-                fi
-            fi
-            usedPk=$(cut -d ':' -f1 "./$tablename/$tablename" | awk '{if(NR != $1) print $0}' | grep -x -e "$data")
-            if ! [[ $usedPk == '' ]]; then
-				echo -e "This primary key is already used !"
+        if ! [ -d ./$tablename ];then
+            echo -e "The Table $tablename doesn't exists . "
+        else
+            NoOfColumns=`awk 'END{print NR}' ./$tablename/$tablename-metadata ` 
+            separator=":"
+            typeset -i i
+            data=""
+            alldata=""
+            fname=""
+            for (( i=3; i <= $NoOfColumns ; i++ )); do
+            # while [ $i -le $NoOfColumns ]; do
+                Fieldname=`awk 'BEGIN{FS=":"}{ if(NR=='$i') print $1}' ./$tablename/$tablename-metadata`
+                FieldType=`awk 'BEGIN{FS=":"}{if(NR=='$i') print $2}' ./$tablename/$tablename-metadata`
+                PKorNOT=`awk 'BEGIN{FS=":"}{if(NR=='$i') print $3}' ./$tablename/$tablename-metadata`
+                fname+=Fieldname"|"
                 echo -e "Enter value of $Fieldname of type $FieldType : "
                 read data
-            fi
+                if [[ $data == "" ]];then
+                    echo -e "You entered empty value \n"
+                else
+                    if [[ $FieldType == "int" ]] ; then
+                        while ! [[ $data = *[0-9]* ]]; do
+                                echo -e "$data isn't integar"
+                                echo -e "Enter value of $Fieldname of type $FieldType : "
+                                read data
+                        done
+                    fi
+                        FieldColNum=`cut -d: -f3 ./$tablename/$tablename-metadata | grep -n -w "^PK$" | cut -d: -f1` 
+                        Key=$(awk 'BEGIN{FS=":"}{if(NR=='$i') print $3}' ./$tablename/$tablename-metadata)
+                        if [[ $Key == 'PK' ]]; then
+                            while [ true ]; do
+                            countPk=`cut -d '|' -f"$FieldColNum" ./$tablename/$tablename | grep -c -w "$data"`  
+                                if [[ $countPk != 0 ]]; then
+                                    echo -e "\t $data is already used (Duplicated primary key)! \n"
+                                    echo -e "Enter value of $Fieldname of type $FieldType : "
+                                    read data
+                                else
+                                    break
+                                fi
+                            done
+                        fi
+                fi
                 alldata+=$data$separator
-        done
+            done
             echo $alldata >>./$tablename/$tablename
             echo -e "Data inserted Successfully :)"
+        fi
             TableMenu
 }
 function DeleteFromTable {
@@ -281,22 +293,22 @@ if [[ $result == "" ]]
     fi
 fi	
  }
- function SelectMenu {
+    function SelectMenu {
     echo -e "\n |-------------------Select Menu-------------------------| \n"
-select option in "Select All (*)" "Select By Column Name" "Select By Condition " "Back to Main Menu" "Back to Table Menu" "Exit" 
-do
-    case $REPLY in
-    1) SelectAll ;;
-    2) SelectByColName ;;
-    3) SelectByCondition ;;
-    4) MainMenu ;;
-    5) TableMenu ;;
-    6) exit ;;
-    *) echo $REPLY is not one of the choices ;;
-esac
-done 
-    echo -e "\n |-------------------------------------------------------| \n"
-}
+        select option in "Select All (*)" "Select By Column Name" "Select By Condition " "Back to Main Menu" "Back to Table Menu" "Exit" 
+            do
+            case $REPLY in
+            1) SelectAll ;;
+            2) SelectByColName ;;
+            3) SelectByCondition ;;
+            4) MainMenu ;;
+            5) TableMenu ;;
+            6) exit ;;
+            *) echo $REPLY is not one of the choices ;;
+            esac
+        done 
+        echo -e "\n |-------------------------------------------------------| \n"
+    }
     function SelectAll {
         typeset -i i
         data=""
@@ -308,12 +320,55 @@ done
         column -t -s ':' ./$tableName/$tableName 2>> /dev/null | tail -n +2
         echo -e "\n"
         echo -e "*----------------------------------------------*\n"
-        SelectMenu
+         SelectMenu
     }
     function SelectByColName {
         SelectMenu
     }
     function SelectByCondition {
+        echo "Enter the table name :"
+	    read TableName
+            if ! [[ -d $TableName ]];then
+	            echo "Table isn't Exist!!!"
+	TableMenu
+  fi
+
+	echo "Enter Column name : "
+	read colName
+
+field=$(
+awk '
+BEGIN{FS="|"}
+    {
+        if(NR==1)
+            {
+                for(i=1;i<=NF;i++)
+                {
+                    if("'$colName'"==$i) print i
+                }
+            }
+    }' ./$TableName/$TableName 2>> /dev/null)
+
+   if [[ $field == "" ]];then
+	echo "Column is not exist!!!"
+	TableMenu
+   else
+	echo "Enter the value: "	
+	read value
+
+result=$(awk 'BEGIN{FS=":"} { if ( $'$field' == "'$value'") print $'$field' }' ./$TableName/$TableName)
+if [[ $result == "" ]]
+        then
+        echo "The Value is not Exist!!! "
+        TableMenu
+    else
+        NR=$(awk 'BEGIN{FS=":"}{ if ($'$field'=="'$value'") print NR }' ./$TableName/$TableName)
+
+        sed -n ''$NR'p' ./$TableName/$TableName
+        echo "Row selected Successfully"
+        TableMenu
+    fi
+fi	
         SelectMenu
     }
 

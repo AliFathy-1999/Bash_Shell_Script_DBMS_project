@@ -1,6 +1,5 @@
 No of columns:4
 Field Name|Field Type|Primary key
-
 id:int:PK
 name:str:
 subject:str:
