@@ -433,43 +433,77 @@ function SelectByColName {
 
 
 function UpdateTable {
+	
 	echo  "Enter Table Name: "
-    read tableName
-    echo  "Enter Column name: "
-    read field
-    checkfid=$(awk 'BEGIN{FS="|"}{if(NR==1){for(i=1;i<=NF;i++){if($i=="'$field'") print i}}}' ./$tableName/$tableName)
-    if [[ $checkfid == "" ]]
-    then
-        echo "Not Found"
-        TableMenu
+  read tableName
+if [ -d $tableName ]
+    then 
+        echo -e "\n\nTable accessed successfully :) \n\n"
     else
-        echo "Enter The Condition Value: "
-        read value
-        result=$(awk 'BEGIN{FS=":"}{if ($'$checkfid'=="'$value'") print $'$checkfid'}' ./$tableName/$tableName 2>>./.error.log)
-        if [[ $result == "" ]]
-            then
-            echo "Value Not Found"
-        TableMenu
-        else
-            echo  "Enter Column name to set: "
-            read setField
-            setFid=$(awk 'BEGIN{FS="|"}{if(NR==1){for(i=1;i<=NF;i++){if($i=="'$setField'") print i}}}' ./$tableName/$tableName)
-            if [[ $setFid == "" ]]
-                then
-                    echo "Not Found"
-                    TableMenu
-            else
-                echo -e "Enter new Value to set: \c"
-                read newValue
-                NR=$(awk 'BEGIN{FS=":"}{if ($'$checkfid' == "'$value'") print NR}' ./$tableName/$tableName 2>>./.error.log)
-                oldValue=$(awk 'BEGIN{FS=":"}{if(NR=='$NR'){for(i=1;i<=NF;i++){if(i=='$setFid') print $i}}}' ./$tableName/$tableName 2>>./.error.log)
-                echo $oldValue
-                sed -i ''$NR's/'$oldValue'/'$newValue'/g' ./$tableName/$tableName 2>>./.error.log
-                echo "Row Updated Successfully"
-                TableMenu
-            fi
-        fi
+      echo -e "\n There is no Table named ($tableName) \n "
+	UpdateTable
     fi
+  echo  "Enter Column name: "
+  read field
+  checkfid=$(awk 'BEGIN{FS="|"}{if(NR==1){for(i=1;i<=NF;i++){if($i=="'$field'") print i}}}' ./$tableName/$tableName)
+  if [[ $checkfid == "" ]]
+  then
+    echo -e "\n\nNot Found\n\n"
+    UpdateTable
+  else
+    echo "Enter The Condition Value: "
+    read value
+    result=$(awk 'BEGIN{FS=":"}{if ($'$checkfid'=="'$value'") print $'$checkfid'}' ./$tableName/$tableName 2>>./.error.log)
+    if [[ $result == "" ]]
+    then
+      echo -e "\n\nValue Not Found\n\n"
+      UpdateTable
+    else
+      echo  "Enter Column name to set: "
+      read setField
+      setFid=$(awk 'BEGIN{FS="|"}{if(NR==1){for(i=1;i<=NF;i++){if($i=="'$setField'") print i}}}' ./$tableName/$tableName)
+      if [[ $setFid == "" ]]
+      then
+        echo -e "\n\nNot Found\n\n"
+        UpdateTable
+      else
+
+  echo  "Enter new Value to set: "
+        read newValue
+
+
+FieldColNum=`awk 'END{print NR}' ./$tableName/$tableName-metadata`
+            for (( i = 2; i <= $FieldColNum; i++ )); do
+                ColNum=`cut -d: -f3 ./$tableName/$tableName-metadata | grep -n -w "^PK$" | cut -d: -f1` 
+                Key=$(awk 'BEGIN{FS=":"}{if(NR=='$i') print $3}' ./$tableName/$tableName-metadata)
+                if [[ $Key == 'PK' ]]; then
+                    while [ true ]; do
+                    countPk=`cut -d '|' -f"$ColNum" ./$tableName/$tableName | grep -c -w "$newValue"`  
+
+                    if [[ $countPk != 0 ]]; then
+                        echo -e "Duplcated PK \n"
+ 			UpdateTable
+                        else
+                        break;
+                    fi
+
+                    done
+                fi
+            done
+
+
+
+        NR=$(awk 'BEGIN{FS=":"}{if ($'$checkfid' == "'$value'") print NR}' ./$tableName/$tableName 2>>./.error.log)
+        oldValue=$(awk 'BEGIN{FS=":"}{if(NR=='$NR'){for(i=1;i<=NF;i++){if(i=='$setFid') print $i}}}' ./$tableName/$tableName 2>>./.error.log)
+        echo $oldValue
+        sed -i ''$NR's/'$oldValue'/'$newValue'/g' ./$tableName/$tableName 2>>./.error.log
+
+
+        echo "Row Updated Successfully"
+        TableMenu
+      fi
+    fi
+  fi
 }
 
 MainMenu
