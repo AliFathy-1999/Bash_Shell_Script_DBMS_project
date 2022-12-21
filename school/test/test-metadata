@@ -2,4 +2,4 @@ No of columns:3
 Field Name|Field Type|Primary key
 id:int:PK
 name:str:
-level:str:
+city:str:

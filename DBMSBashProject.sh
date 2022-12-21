@@ -6,10 +6,14 @@ echo "|--------------------------------------------------|"
 echo "|              Hello  to our DBMS project          |"
 echo "|--------------------------------------------------|"
 
-
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NOCOLOR='\033[0m'
+YELLOW='\033[1;32m'
+BLUE='\033[0;34m'
 function MainMenu {
     echo -e "\n |-------------------Main Menu-------------------------| \n "
-select option in "1. Create Database" "2. Connect to Database " "3. List Databases " "4. Drop Database" "5. Exit" 
+select option in "Create Database" "Connect to Database " "List Databases " "Drop Database" "Exit" 
 do
     case $REPLY in
     1) CreateDatabases ;;
@@ -26,51 +30,52 @@ function CreateDatabases {
     echo Enter your database name
     read dbname 
     if [[ $dbname = "" ]]; then
-        echo -e "You entered empty value \n"
-    elif [[ $dbname == *['!'@#\$%^\&*()_+]* ]];
+        echo -e "${RED}You entered empty value ${NOCOLOR}\n"
+    elif [[ $dbname == *['!'@#\$%^\&*()_+/.#+=-{}[]:?]* ]];
     then
-        echo -e "You can't enter these characters => . / : * $ @ ^ % ( ) ! + _ # & - | \n"
+        echo -e "${RED} You can't enter these characters => . / : * $ @ ^ % ( ) ! + _ # & - | ${NOCOLOR}\n"
     elif [[ $dbname =~ ^[0-9] ]];
     then
-		echo -e "You can't start Database name with number \n"
+		echo -e "\n  ${RED}You can't start Database name with number ${NOCOLOR}\n"
     elif [ -d $dbname ] 
     then
-        echo Database already exists
+        echo -e "\n ${RED} Database already exists ${NOCOLOR}\n"
     else 
         mkdir ./$dbname
-        echo -e "$dbname Created Successfully \n" 
+        echo -e "\n ${GREEN} $dbname Created Successfully ${NOCOLOR}\n" 
     fi
     MainMenu
 }
 
 function ListDatabases {
      ls -F | grep /
-        echo -e "Listed Successfully \n" 
+        echo -e "\n ${GREEN} Listed Successfully ${NOCOLOR}\n" 
     MainMenu
 }
 
 function ConnectToDatabase {
     echo Enter your database name
     read dbname
-    if [ -d $dbname ]
+    if [ -d $dbname ] && [[ $dbname != "" ]]
     then
         cd ./$dbname
-        echo -e "Connected Successfully to $dbname  \n"
+        echo -e "\n ${GREEN}Connected Successfully to $dbname  ${NOCOLOR}\n"
         TableMenu
     else
-        echo -e "Connected Failed, There is no database named ($dbname) \n"
+        echo -e "\n ${RED}Connecting Failed, please enter valid database name  ${NOCOLOR}\n"
+        ConnectToDatabase
     fi
 } 
 
 function DropDatabases {
-    echo "Enter database name you want to drop :"
+    echo -e "\n Enter database name you want to drop : \c"
     read dbname
     if [ -d $dbname ]
     then 
         rm -r ./$dbname
-        echo -e "Database Droped Successfully \n"
+        echo -e "${GREEN}Database Droped Successfully ${NOCOLOR}\n"
     else
-      echo -e "There is no database named ($dbname) \n "
+      echo -e "${RED} There is no database named ($dbname) ${NOCOLOR}\n "
     fi
     MainMenu
 }
@@ -95,32 +100,33 @@ done
 }
 
 function CreateTable {
-    echo Enter your table name
+    echo -e "\n Enter your table name : \c"
     read tablename 
    
     if [[ $tablename == *['!'@#\$%^\&*()_+]* ]];
     then
-        echo -e "You can't enter these characters => . / : * $ @ ^ % ( ) ! + _ # & - | \n"
+        echo -e "\n ${RED}You can't enter these characters => . / : * $ @ ^ % ( ) ! + _ # & - | ${NOCOLOR}\n"
         CreateTable
     elif [[ $tablename =~ ^[0-9] ]];
     then
-		echo -e "You can't start Table name with number \n"
+		echo -e "\n ${RED}You can't start Table name with number ${NOCOLOR} \n"
         CreateTable
-     elif [ -f .1/$tablename/$tablename ] 
+    elif [[ $tablename == "" ]]; then
+        echo -e "\n ${RED}You can't enter empty value ${NOCOLOR} \n"
+        CreateTable
+    elif [ -f ./$tablename/$tablename ] 
     then
-        echo Table already exists
+        echo -e "\n ${RED}Table already exists${NOCOLOR}"
         TableMenu
     fi
-        mkdir -p $tablename
-        touch ./$tablename/$tablename
-        touch ./$tablename/$tablename-metadata
-        echo -e "$tablename Created Successfully \n" 
         echo -e "Enter Number of Fields (Column) : \n" 
         read colno 
-        echo  "No of columns:$colno" >> ./$tablename/$tablename-metadata
+        if [[ $colno != *[0-9]* ]]; then
+            echo -e "${RED}\n Number of Fields (Column) must be Integar \n ${NOCOLOR}"
+            CreateTable
+        fi
         separator=":"
         metaDataFormate="Field Name|Field Type|Primary key"
-        echo $metaDataFormate >> ./$tablename/$tablename-metadata
         typeset -i i=1
         primarykey=""
         data=""
@@ -128,15 +134,18 @@ function CreateTable {
         space="\n"
         while [ $i -le $colno ]
         do
-            echo -e " Enter name of Field (Column $i) : \n"
+            echo -e "\n Enter name of Field (Column $i) : \n"
             read Fieldname
             if [[ $Fieldname == *['!'@#\$%^\&*()_+]* ]];
              then
-                echo -e "You can't enter these characters in field name => . / : * $ @ ^ % ( ) ! + _ # & - | \n"
+                echo -e "\n ${RED}You can't enter these characters in field name => . / : * $ @ ^ % ( ) ! + _ # & - | ${NOCOLOR}\n"
+                continue
+            elif [[ $Fieldname == "" ]]; then
+                echo -e "\n ${RED}You can't enter empty value ${NOCOLOR} \n"
                 continue
             elif [[ $Fieldname =~ ^[0-9] ]];
                 then
-                    echo -e "You can't start Field name with number \n"
+                    echo -e "\n ${RED}You can't start Field name with number ${NOCOLOR}\n"
                     continue
             else            
             echo -e "Enter Type of $Fieldname (Column $i) : \n"
@@ -145,11 +154,11 @@ function CreateTable {
             case $var in
                 int ) FieldType="int"; break;;
                 str ) FieldType="str"; break;;
-                * ) echo "Wrong Choice" ;;
+                * ) echo -e "${RED} Wrong Choice ${NOCOLOR}" ;;
             esac
             done
             if [[ $primarykey == "" ]]; then
-                echo -e "Make This Field PrimaryKey ??? "
+                echo -e "\n Make This Field PrimaryKey ??? "
                 select var in "yes" "no"
                 do
                     case $var in
@@ -159,7 +168,7 @@ function CreateTable {
                     no )
                         data+=$Fieldname$separator$FieldType$separator""$space;
                     break;;
-                    * ) echo "Wrong Choice" ;;
+                    * ) echo -e "${RED} Wrong Choice ${NOCOLOR}" ;;
                     esac
                 done
             else
@@ -168,10 +177,14 @@ function CreateTable {
             ((i++))
             fi
             fname+=$Fieldname"|"
-            
         done
+                mkdir -p $tablename
+                touch ./$tablename/$tablename
+                touch ./$tablename/$tablename-metadata 
+                echo  "No of columns:$colno" >> ./$tablename/$tablename-metadata
+                echo $metaDataFormate >> ./$tablename/$tablename-metadata
                 echo -e $data >> ./$tablename/$tablename-metadata;
-                echo -e "Table created successfully \n"
+                echo -e "${GREEN}$tablename created successfully ${NOCOLOR}\n"
                 echo $fname  >> ./$tablename/$tablename
                
         
@@ -179,20 +192,19 @@ function CreateTable {
 }
  function ListTables {
 	ls -F | grep /
-	 echo -e "\nTables listed Successfully \n" 
+	echo -e "${GREEN}\n Tables listed Successfully ${NOCOLOR}\n" 
     TableMenu
-
  }
  function DropTable {
-	echo Enter the table name you want to drop 
+	echo -e "\n Enter the table name you want to drop : \c" 
 	read DropT
-	if [ -d $DropT ]
+	if [ -d $DropT ] && [[ $DropT != "" ]]
     then 
-        rm -r $DropT
-	
-        echo -e "The Table $DropT Droped Successfully \n"
+            rm -r $DropT
+            echo -e "\n ${GREEN}The Table $DropT Droped Successfully ${NOCOLOR} \n"
     else
-      echo -e "Wrong Table Name ($DropT) \n "
+      echo -e "${RED}\n You entered invalid Table Name  ${NOCOLOR} \n "
+      DropTable
     fi
     TableMenu
  }
@@ -200,7 +212,11 @@ function InsertintoTable {
         echo -e "Enter the table name you want to insert into : \n"
         read tablename
         if ! [ -d ./$tablename ];then
-            echo -e "The Table $tablename doesn't exists . "
+            echo -e "\n ${RED}The Table $tablename doesn't exists .${NOCOLOR} \n"
+            InsertintoTable
+        elif [[ $tablename == "" ]]; then
+            echo -e "${RED} You can't enter empty value .${NOCOLOR} \n"
+            InsertintoTable 
         else
             NoOfColumns=`awk 'END{print NR}' ./$tablename/$tablename-metadata ` 
             separator=":"
@@ -209,20 +225,20 @@ function InsertintoTable {
             alldata=""
             fname=""
             for (( i=3; i <= $NoOfColumns ; i++ )); do
-            # while [ $i -le $NoOfColumns ]; do
                 Fieldname=`awk 'BEGIN{FS=":"}{ if(NR=='$i') print $1}' ./$tablename/$tablename-metadata`
                 FieldType=`awk 'BEGIN{FS=":"}{if(NR=='$i') print $2}' ./$tablename/$tablename-metadata`
                 PKorNOT=`awk 'BEGIN{FS=":"}{if(NR=='$i') print $3}' ./$tablename/$tablename-metadata`
                 fname+=Fieldname"|"
-                echo -e "Enter value of $Fieldname of type $FieldType : "
+                echo -e "\n Enter value of $Fieldname of type $FieldType : \c"
                 read data
                 if [[ $data == "" ]];then
-                    echo -e "You entered empty value \n"
+                        echo -e "${RED} You entered empty value ${NOCOLOR}\n"
+                        InsertintoTable    
                 else
                     if [[ $FieldType == "int" ]] ; then
-                        while ! [[ $data = *[0-9]* ]]; do
-                                echo -e "$data isn't integar"
-                                echo -e "Enter value of $Fieldname of type $FieldType : "
+                        while ! [[ $data == *[0-9]* ]]; do
+                                echo -e "${RED} $data isn't integar ${NOCOLOR}"
+                                echo -e "Enter value of $Fieldname of type $FieldType : \c"
                                 read data
                         done
                     fi
@@ -232,66 +248,74 @@ function InsertintoTable {
                             while [ true ]; do
                             countPk=`cut -d '|' -f"$FieldColNum" ./$tablename/$tablename | grep -c -w "$data"`  
                                 if [[ $countPk != 0 ]]; then
-                                    echo -e "\t $data is already used (Duplicated primary key)! \n"
-                                    echo -e "Enter value of $Fieldname of type $FieldType : "
+                                    echo -e "\t ${RED} $data is already used (Duplicated primary key)! ${NOCOLOR} \n"
+                                    echo -e "Enter value of $Fieldname of type $FieldType : \c"
                                     read data
                                 else
                                     break
                                 fi
                             done
-                        fi
+                        fi                      
                 fi
                 alldata+=$data$separator
             done
-            echo $alldata >>./$tablename/$tablename
-            echo -e "Data inserted Successfully :)"
         fi
+            if [[ $data == "" ]]; then
+                echo -e "\n ${RED} Error in Inserting data ${NOCOLOR} \n "
+                InsertintoTable
+            else
+                echo $alldata >>./$tablename/$tablename
+                echo -e "${GREEN} \n Data inserted Successfully :) ${NOCOLOR}"
+            fi
             TableMenu
 }
 function DeleteFromTable {
-   echo "Enter the table name :"
-	read TableName
-  if ! [[ -d $TableName ]];then
-	echo "Table isn't Exist!!!"
-	TableMenu
-  fi
+        echo -e "\n Enter the table name : \c"
+            read TableName
+        if ! [[ -d $TableName ]];then
+            echo "${RED} Table is not Exist!!! ${NOCOLOR}"
+            DeleteFromTable
+        fi
+        if [[ $TableName == "" ]];then
+            echo "${RED} You can't enter empty value ${NOCOLOR}"
+            DeleteFromTable
+        fi        
+            echo -e "\n Enter Column name : \c"
+            read colName
 
-	echo "Enter Column name : "
-	read colName
-
-field=$(
-awk '
-BEGIN{FS="|"}
-    {
-        if(NR==1)
+        field=$(
+        awk '
+        BEGIN{FS="|"}
             {
-                for(i=1;i<=NF;i++)
-                {
-                    if("'$colName'"==$i) print i
-                }
-            }
-    }' ./$TableName/$TableName 2>> /dev/null)
+                if(NR==1)
+                    {
+                        for(i=1;i<=NF;i++)
+                        {
+                            if("'$colName'"==$i) print i
+                        }
+                    }
+            }' ./$TableName/$TableName 2>> /dev/null)
 
-   if [[ $field == "" ]];then
-	echo "Column is not exist!!!"
-	TableMenu
-   else
-	echo "Enter the value: "	
-	read value
+        if [[ $field == "" ]];then
+            echo "Column is not exist!!!"
+            TableMenu
+        else
+            echo "Enter the value: "	
+            read value
 
-result=$(awk 'BEGIN{FS=":"} { if ( $'$field' == "'$value'") print $'$field' }' ./$TableName/$TableName)
-if [[ $result == "" ]]
-        then
-        echo "The Value is not Exist!!! "
-        TableMenu
-    else
-        NR=$(awk 'BEGIN{FS=":"}{ if ($'$field'=="'$value'") print NR }' ./$TableName/$TableName)
+        result=$(awk 'BEGIN{FS=":"} { if ( $'$field' == "'$value'") print $'$field' }' ./$TableName/$TableName)
+        if [[ $result == "" ]]
+                then
+                echo "The Value is not Exist!!! "
+                TableMenu
+            else
+                NR=$(awk 'BEGIN{FS=":"}{ if ($'$field'=="'$value'") print NR }' ./$TableName/$TableName)
 
-        sed -i ''$NR'd' ./$TableName/$TableName
-        echo "Row Deleted Successfully"
-        TableMenu
-    fi
-fi	
+                sed -i ''$NR'd' ./$TableName/$TableName
+                echo "Row Deleted Successfully"
+                TableMenu
+            fi
+        fi	
  }
     function SelectMenu {
     echo -e "\n |-------------------Select Menu-------------------------| \n"
@@ -312,61 +336,70 @@ fi
     function SelectAll {
         typeset -i i
         data=""
-        echo -e "\n Enter Table name : \n"
+        echo -e "\n Enter Table name : \c"
         read tableName
-        echo -e "\n"
-        column -t -s '|' ./$tableName/$tableName 2>> /dev/null |  head -1
-        echo -e "*----------------------------------------------*\n"
-        column -t -s ':' ./$tableName/$tableName 2>> /dev/null | tail -n +2
-        echo -e "\n"
-        echo -e "*----------------------------------------------*\n"
+        if [[ $tableName != "" ]] && [[ -d $tableName ]]; then
+            echo -e "\n"
+            column -t -s '|' ./$tableName/$tableName 2>> /dev/null |  head -1
+            echo -e "*----------------------------------------------*\n"
+            column -t -s ':' ./$tableName/$tableName 2>> /dev/null | tail -n +2
+            echo -e "\n"
+            echo -e "*----------------------------------------------*\n"
+        else
+            echo -e "\n ${RED} You entered invalid value ${NOCOLOR} \n "
+            SelectAll
+        fi
          SelectMenu
     }
 
     function SelectByCondition {
-        echo "Enter the table name :"
+        echo -e "Enter the table name : \c"
 	    read TableName
-            if ! [[ -d $TableName ]];then
-	            echo "Table isn't Exist!!!"
-	TableMenu
-  fi
+        if [[ $TableName != "" ]] && [[ -d $TableName ]]; then
+            echo -e "\n  Please, Enter Column name : \c"
+            read colName
+                field=$(
+                awk '
+                BEGIN{FS="|"}
+                    {
+                        if(NR==1)
+                            {
+                                for(i=1;i<=NF;i++)
+                                {
+                                    if("'$colName'"==$i) print i
+                                }
+                            }
+                    }' ./$TableName/$TableName 2>> /dev/null)
+            if [[ $colName == "" ]];then
+                echo -e "\n ${RED} You entered empty value ${NOCOLOR} \n "
+                SelectByCondition 
+            else
+                if [[ $field == "" ]];then
+                    echo -e "\n ${RED} Column is not exist!!! ${NOCOLOR} \n "
+                    SelectByCondition
+                else
+                    echo -e "\n Enter the value : \c \n"	
+                    read value
 
-	echo "Enter Column name : "
-	read colName
-
-field=$(
-awk '
-BEGIN{FS="|"}
-    {
-        if(NR==1)
-            {
-                for(i=1;i<=NF;i++)
-                {
-                    if("'$colName'"==$i) print i
-                }
-            }
-    }' ./$TableName/$TableName 2>> /dev/null)
-
-   if [[ $field == "" ]];then
-	echo "Column is not exist!!!"
-	TableMenu
-   else
-	echo "Enter the value: "	
-	read value
-
-result=$(awk 'BEGIN{FS=":"} { if ( $'$field' == "'$value'") print $'$field' }' ./$TableName/$TableName)
-if [[ $result == "" ]]
-        then
-        echo "The Value is not Exist!!! "
-        TableMenu
-    else
-        NR=$(awk 'BEGIN{FS=":"}{ if ($'$field'=="'$value'") print NR }' ./$TableName/$TableName)
-
-        sed -n ''$NR'p' ./$TableName/$TableName
-        echo "Row selected Successfully"
-        TableMenu
-    fi
-fi	
+                result=$(awk 'BEGIN{FS=":"} { if ( $'$field' == "'$value'") print $'$field' }' ./$TableName/$TableName)
+                if [[ $result == "" ]]
+                    then
+                        echo -e "\n ${RED} The Value is not Exist!!! ${NOCOLOR} \n "
+                        SelectByCondition
+                else
+                echo -e "\n" 
+                    NR=$(awk 'BEGIN{FS=":"}{ if ($'$field'=="'$value'") print NR }' ./$TableName/$TableName)
+                    sed -n ''$NR'p' ./$TableName/$TableName
+                    echo -e "\n ${GREEN}Row selected Successfully ${NOCOLOR} \n "
+                    SelectMenu
+                    fi
+                fi	
+                fi
+            else
+                    echo -e "\n ${RED} You entered invalid tablename ${NOCOLOR} \n"
+                    SelectByCondition 
+            fi
+        
         SelectMenu
     }
 
@@ -376,88 +409,67 @@ function SelectByColName {
 	read tableName
 	echo "Enter Column Name :"
 	read colName
-	########################## 
-if [[ $colName = "" ]]
-then
-echo "You Can't Enter Empty Space!"
-else
-field=$(
-    awk '
-    BEGIN{FS="|"}
-        {
-            if(NR==1)
-                {
-                    for(i=1;i<=NF;i++)
+    if [[ $colName = "" ]]
+    then
+    echo "You Can't Enter Empty Space!"
+    else
+    field=$(
+        awk '
+        BEGIN{FS="|"}
+            {
+                if(NR==1)
                     {
-                        if("'$colName'"==$i) print i
+                        for(i=1;i<=NF;i++)
+                        {
+                            if("'$colName'"==$i) print i
+                        }
                     }
-                }
-        }' ./$tableName/$tableName)
-awk 'BEGIN{FS=":"; ORS = " \n "}{print  $'$colName'}' ./$tableName/$tableName | tail -n +2
+            }' ./$tableName/$tableName)
+    awk 'BEGIN{FS=":"; ORS = " \n "}{print  $'$colName'}' ./$tableName/$tableName | tail -n +2
 
-
-
-
-
-
-
-	#awk 'BEGIN{FS=":"; ORS = " \n "}{print  $'$colNum'}' ./$tableName/$tableName
-
-
-
-
-	# awk 'BEGIN{FS=":"}{print $'$colname'}' ./$tableName/$tableName
-
-	#sep="|"
-	#	 awk 'BEGIN{FS=":"}{ print $'$colName'}' ./$tableName/$tableName
-	#awk 'BEGIN{FS="|"}{ if (NR==sep) print "Column"}' ./$tableName/$tableName
-
-
-	#sed -n '|d'
-fi	
+    fi	
         SelectMenu
     }
 
 
 function UpdateTable {
-	
 	echo  "Enter Table Name: "
-  read tableName
-  echo  "Enter Column name: "
-  read field
-  checkfid=$(awk 'BEGIN{FS="|"}{if(NR==1){for(i=1;i<=NF;i++){if($i=="'$field'") print i}}}' ./$tableName/$tableName)
-  if [[ $checkfid == "" ]]
-  then
-    echo "Not Found"
-    TableMenu
-  else
-    echo "Enter The Condition Value: "
-    read value
-    result=$(awk 'BEGIN{FS=":"}{if ($'$checkfid'=="'$value'") print $'$checkfid'}' ./$tableName/$tableName 2>>./.error.log)
-    if [[ $result == "" ]]
+    read tableName
+    echo  "Enter Column name: "
+    read field
+    checkfid=$(awk 'BEGIN{FS="|"}{if(NR==1){for(i=1;i<=NF;i++){if($i=="'$field'") print i}}}' ./$tableName/$tableName)
+    if [[ $checkfid == "" ]]
     then
-      echo "Value Not Found"
-      TableMenu
-    else
-      echo  "Enter Column name to set: "
-      read setField
-      setFid=$(awk 'BEGIN{FS="|"}{if(NR==1){for(i=1;i<=NF;i++){if($i=="'$setField'") print i}}}' ./$tableName/$tableName)
-      if [[ $setFid == "" ]]
-      then
         echo "Not Found"
         TableMenu
-      else
-        echo -e "Enter new Value to set: \c"
-        read newValue
-        NR=$(awk 'BEGIN{FS=":"}{if ($'$checkfid' == "'$value'") print NR}' ./$tableName/$tableName 2>>./.error.log)
-        oldValue=$(awk 'BEGIN{FS=":"}{if(NR=='$NR'){for(i=1;i<=NF;i++){if(i=='$setFid') print $i}}}' ./$tableName/$tableName 2>>./.error.log)
-        echo $oldValue
-        sed -i ''$NR's/'$oldValue'/'$newValue'/g' ./$tableName/$tableName 2>>./.error.log
-        echo "Row Updated Successfully"
+    else
+        echo "Enter The Condition Value: "
+        read value
+        result=$(awk 'BEGIN{FS=":"}{if ($'$checkfid'=="'$value'") print $'$checkfid'}' ./$tableName/$tableName 2>>./.error.log)
+        if [[ $result == "" ]]
+            then
+            echo "Value Not Found"
         TableMenu
-      fi
+        else
+            echo  "Enter Column name to set: "
+            read setField
+            setFid=$(awk 'BEGIN{FS="|"}{if(NR==1){for(i=1;i<=NF;i++){if($i=="'$setField'") print i}}}' ./$tableName/$tableName)
+            if [[ $setFid == "" ]]
+                then
+                    echo "Not Found"
+                    TableMenu
+            else
+                echo -e "Enter new Value to set: \c"
+                read newValue
+                NR=$(awk 'BEGIN{FS=":"}{if ($'$checkfid' == "'$value'") print NR}' ./$tableName/$tableName 2>>./.error.log)
+                oldValue=$(awk 'BEGIN{FS=":"}{if(NR=='$NR'){for(i=1;i<=NF;i++){if(i=='$setFid') print $i}}}' ./$tableName/$tableName 2>>./.error.log)
+                echo $oldValue
+                sed -i ''$NR's/'$oldValue'/'$newValue'/g' ./$tableName/$tableName 2>>./.error.log
+                echo "Row Updated Successfully"
+                TableMenu
+            fi
+        fi
     fi
-  fi
 }
 
 MainMenu
