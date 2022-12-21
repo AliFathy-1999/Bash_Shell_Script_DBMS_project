@@ -273,11 +273,11 @@ function DeleteFromTable {
         echo -e "\n Enter the table name : \c"
             read TableName
         if ! [[ -d $TableName ]];then
-            echo "${RED} Table is not Exist!!! ${NOCOLOR}"
+            echo -e "${RED} Table is not Exist!!! ${NOCOLOR}"
             DeleteFromTable
         fi
         if [[ $TableName == "" ]];then
-            echo "${RED} You can't enter empty value ${NOCOLOR}"
+            echo -e "${RED} You can't enter empty value ${NOCOLOR}"
             DeleteFromTable
         fi        
             echo -e "\n Enter Column name : \c"
@@ -297,22 +297,21 @@ function DeleteFromTable {
             }' ./$TableName/$TableName 2>> /dev/null)
 
         if [[ $field == "" ]];then
-            echo "Column is not exist!!!"
-            TableMenu
+            echo -e "${RED} Table is not Exist!!! ${NOCOLOR}"
+            DeleteFromTable
         else
-            echo "Enter the value: "	
+            echo -e "\nEnter the value: \c"	
             read value
 
         result=$(awk 'BEGIN{FS=":"} { if ( $'$field' == "'$value'") print $'$field' }' ./$TableName/$TableName)
         if [[ $result == "" ]]
                 then
-                echo "The Value is not Exist!!! "
-                TableMenu
+            echo -e "${RED} Table is not Exist!!! ${NOCOLOR}"
+                DeleteFromTable
             else
                 NR=$(awk 'BEGIN{FS=":"}{ if ($'$field'=="'$value'") print NR }' ./$TableName/$TableName)
-
                 sed -i ''$NR'd' ./$TableName/$TableName
-                echo "Row Deleted Successfully"
+                echo -e "\n ${GREEN} Row Deleted Successfully ${NOCOLOR}"
                 TableMenu
             fi
         fi	
@@ -405,29 +404,36 @@ function DeleteFromTable {
 
 
 function SelectByColName {
-	echo "Enter Table Name :"
+	echo -e "\n Enter Table Name :"
 	read tableName
-	echo "Enter Column Name :"
-	read colName
-    if [[ $colName = "" ]]
-    then
-    echo "You Can't Enter Empty Space!"
-    else
-    field=$(
-        awk '
-        BEGIN{FS="|"}
-            {
-                if(NR==1)
+    if [[ $tableName != "" ]] && [[ -d ./$tableName ]];then
+	    echo -e "\n Enter Column Name :"
+	    read colName
+         for (( i=3; i <= $NoOfColumns ; i++ )); do
+            Fieldname=$(awk 'BEGIN{FS="|"}{if(NR==1){for(i=1;i<=NF;i++){if($i=="'$colName'") print i}}}' ./$tableName/$tableName)
+        done
+        if [[ $colName == "" ]] && [[ $Fieldname != $colName ]]
+        then
+            echo -e "\n \t ${RED} You entered invalid value ${NOCOLOR} \n"
+        else
+            field=$(
+                awk '
+                BEGIN{FS="|"}
                     {
-                        for(i=1;i<=NF;i++)
-                        {
-                            if("'$colName'"==$i) print i
-                        }
-                    }
-            }' ./$tableName/$tableName)
-    awk 'BEGIN{FS=":"; ORS = " \n "}{print  $'$colName'}' ./$tableName/$tableName | tail -n +2
+                        if(NR==1)
+                            {
+                                for(i=1;i<=NF;i++)
+                                {
+                                    if("'$colName'"==$i) print i
+                                }
+                            }
+                    }' ./$tableName/$tableName)
+            awk 'BEGIN{FS=":"; ORS = " \n "}{print  $'$colName'}' ./$tableName/$tableName | tail -n +2
+        fi	        
+    else
+    echo -e "\n ${RED} You entered invalid tablename ${NOCOLOR} \n"
+    fi
 
-    fi	
         SelectMenu
     }
 
@@ -476,11 +482,21 @@ function UpdateTable {
                 else
                 echo -e "\n Enter new Value to set: \c"
                 read newValue
+                if [[ $newValue == "" ]];then
+                echo -e "\n \t ${RED} You entered empty value ${NOCOLOR}"
+                else
                 FieldColNum=`awk 'END{print NR}' ./$tableName/$tableName-metadata`
                             for (( i = 2; i <= $FieldColNum; i++ )); do
+                                FieldType=`awk 'BEGIN{FS=":"}{if(NR=='$i') print $2}' ./$tableName/$tableName-metadata` 
                                 ColNum=`cut -d: -f3 ./$tableName/$tableName-metadata | grep -n -w "^PK$" | cut -d: -f1` 
                                 Key=$(awk 'BEGIN{FS=":"}{if(NR=='$i') print $3}' ./$tableName/$tableName-metadata)
-                                if [[ $Key == 'PK' ]]; then
+                                if [[ $FieldType == "int" ]] ; then
+                                while ! [[ $newValue == *[0-9]* ]]; do
+                                    echo -e "${RED} $newValue isn't integar ${NOCOLOR}"
+                                    echo -e "Enter new Value to set: \c"
+                                    read newValue
+                                done
+                                elif [[ $Key == 'PK' ]]; then
                                     while [ true ]; do
                                     countPk=`cut -d '|' -f"$ColNum" ./$tableName/$tableName | grep -c -w "$newValue"`  
 
@@ -500,9 +516,10 @@ function UpdateTable {
                         sed -i ''$NR's/'$oldValue'/'$newValue'/g' ./$tableName/$tableName 2>>./.error.log
                         echo -e "${GREEN}Row Updated Successfully ${NOCOLOR} \n"
                         TableMenu
-                    fi
+                        fi
                     fi
                 fi
+            fi
         fi
 }
 
