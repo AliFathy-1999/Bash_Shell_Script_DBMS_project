@@ -27,7 +27,7 @@ done
 }
 
 function CreateDatabases {
-    echo Enter your database name
+    echo -e "\n Enter your database name : \c"
     read dbname 
     if [[ $dbname = "" ]]; then
         echo -e "${RED}You entered empty value ${NOCOLOR}\n"
@@ -54,8 +54,8 @@ function ListDatabases {
 }
 
 function ConnectToDatabase {
-    echo Enter your database name
-    read dbname
+    echo -e "\n Enter your database name : \c"
+    read dbname 
     if [ -d $dbname ] && [[ $dbname != "" ]]
     then
         cd ./$dbname
@@ -434,76 +434,76 @@ function SelectByColName {
 
 function UpdateTable {
 	
-	echo  "Enter Table Name: "
-  read tableName
-if [ -d $tableName ]
-    then 
-        echo -e "\n\nTable accessed successfully :) \n\n"
-    else
-      echo -e "\n There is no Table named ($tableName) \n "
-	UpdateTable
-    fi
-  echo  "Enter Column name: "
-  read field
-  checkfid=$(awk 'BEGIN{FS="|"}{if(NR==1){for(i=1;i<=NF;i++){if($i=="'$field'") print i}}}' ./$tableName/$tableName)
-  if [[ $checkfid == "" ]]
-  then
-    echo -e "\n\nNot Found\n\n"
-    UpdateTable
-  else
-    echo "Enter The Condition Value: "
-    read value
-    result=$(awk 'BEGIN{FS=":"}{if ($'$checkfid'=="'$value'") print $'$checkfid'}' ./$tableName/$tableName 2>>./.error.log)
-    if [[ $result == "" ]]
-    then
-      echo -e "\n\nValue Not Found\n\n"
-      UpdateTable
-    else
-      echo  "Enter Column name to set: "
-      read setField
-      setFid=$(awk 'BEGIN{FS="|"}{if(NR==1){for(i=1;i<=NF;i++){if($i=="'$setField'") print i}}}' ./$tableName/$tableName)
-      if [[ $setFid == "" ]]
-      then
-        echo -e "\n\nNot Found\n\n"
-        UpdateTable
-      else
+        echo  -e "\n Enter Table Name: \c "
+        read tableName
+        if [ -d $tableName ]
+            then 
+            echo -e "\n\n ${GREEN}Table accessed successfully :) ${NOCOLOR} \n\n"
+        else
+            echo -e "\n \t ${RED} There is no Table named ($tableName)  ${NOCOLOR} \n"
+            UpdateTable
+        fi
+        echo -e "Enter Column name: \c"
+        read field
+        if  [[ $field = "" ]];then
+            echo -e "\n ${RED} You entered empty value ${NOCOLOR} \n"
+            UpdateTable
+        else
+            checkfid=$(awk 'BEGIN{FS="|"}{if(NR==1){for(i=1;i<=NF;i++){if($i=="'$field'") print i}}}' ./$tableName/$tableName)
+            if [[ $checkfid == "" ]]
+            then
+                echo -e "\n \t ${RED} You entered invalid data ${NOCOLOR} \n"
+                UpdateTable
+            else
+                echo -e "\n Enter The Condition Value: \c"
+                read value
+                result=$(awk 'BEGIN{FS=":"}{if ($'$checkfid'=="'$value'") print $'$checkfid'}' ./$tableName/$tableName 2>>./.error.log)
+                if [[ $result == "" ]] && [[ $value == "" ]]
+                then
+                    echo -e "\n \t ${RED} You entered invalid data ${NOCOLOR} \n"
+                    UpdateTable
+                else
+                    echo  -e "\n Enter Column name to set into : \c"
+                    read setField
+                    Fieldname=$(awk 'BEGIN{FS="|"}{if(NR==1){for(i=1;i<=NF;i++){if($i=="'$setField'") print i}}}' ./$tableName/$tableName)
+                if [[ $Fieldname == "" ]] 
+                then
+                    echo -e "\n \t ${RED} You entered invalid data ${NOCOLOR} \n"
+                    UpdateTable
+                elif [[ $setField == "" ]];then
+                    echo -e "\n \t ${RED} You entered empty value ${NOCOLOR} \n"
+                    UpdateTable
+                else
+                echo -e "\n Enter new Value to set: \c"
+                read newValue
+                FieldColNum=`awk 'END{print NR}' ./$tableName/$tableName-metadata`
+                            for (( i = 2; i <= $FieldColNum; i++ )); do
+                                ColNum=`cut -d: -f3 ./$tableName/$tableName-metadata | grep -n -w "^PK$" | cut -d: -f1` 
+                                Key=$(awk 'BEGIN{FS=":"}{if(NR=='$i') print $3}' ./$tableName/$tableName-metadata)
+                                if [[ $Key == 'PK' ]]; then
+                                    while [ true ]; do
+                                    countPk=`cut -d '|' -f"$ColNum" ./$tableName/$tableName | grep -c -w "$newValue"`  
 
-  echo  "Enter new Value to set: "
-        read newValue
+                                    if [[ $countPk != 0 ]]; then
+                                        echo -e "\n \t ${RED} Duplcated PK ${NOCOLOR} \n"
+                                        UpdateTable
+                                    else
+                                        break;
+                                    fi
 
-
-FieldColNum=`awk 'END{print NR}' ./$tableName/$tableName-metadata`
-            for (( i = 2; i <= $FieldColNum; i++ )); do
-                ColNum=`cut -d: -f3 ./$tableName/$tableName-metadata | grep -n -w "^PK$" | cut -d: -f1` 
-                Key=$(awk 'BEGIN{FS=":"}{if(NR=='$i') print $3}' ./$tableName/$tableName-metadata)
-                if [[ $Key == 'PK' ]]; then
-                    while [ true ]; do
-                    countPk=`cut -d '|' -f"$ColNum" ./$tableName/$tableName | grep -c -w "$newValue"`  
-
-                    if [[ $countPk != 0 ]]; then
-                        echo -e "Duplcated PK \n"
- 			UpdateTable
-                        else
-                        break;
+                                    done
+                                fi
+                            done
+                        NR=$(awk 'BEGIN{FS=":"}{if ($'$checkfid' == "'$value'") print NR}' ./$tableName/$tableName 2>>./.error.log)
+                        oldValue=$(awk 'BEGIN{FS=":"}{if(NR=='$NR'){for(i=1;i<=NF;i++){if(i=='$Fieldname') print $i}}}' ./$tableName/$tableName 2>>./.error.log)
+                        echo $oldValue
+                        sed -i ''$NR's/'$oldValue'/'$newValue'/g' ./$tableName/$tableName 2>>./.error.log
+                        echo -e "${GREEN}Row Updated Successfully ${NOCOLOR} \n"
+                        TableMenu
                     fi
-
-                    done
+                    fi
                 fi
-            done
-
-
-
-        NR=$(awk 'BEGIN{FS=":"}{if ($'$checkfid' == "'$value'") print NR}' ./$tableName/$tableName 2>>./.error.log)
-        oldValue=$(awk 'BEGIN{FS=":"}{if(NR=='$NR'){for(i=1;i<=NF;i++){if(i=='$setFid') print $i}}}' ./$tableName/$tableName 2>>./.error.log)
-        echo $oldValue
-        sed -i ''$NR's/'$oldValue'/'$newValue'/g' ./$tableName/$tableName 2>>./.error.log
-
-
-        echo "Row Updated Successfully"
-        TableMenu
-      fi
-    fi
-  fi
+        fi
 }
 
 MainMenu
